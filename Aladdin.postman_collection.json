@@ -1,0 +1,233 @@
+{
+	"info": {
+		"_postman_id": "381823ce-65a5-467a-8296-b92ff930bce6",
+		"name": "Aladdin",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1134780"
+	},
+	"item": [
+		{
+			"name": "Azure - get token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var access_token = pm.response.json().access_token;",
+							"pm.environment.set(\"access_token\", access_token);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "text"
+						},
+						{
+							"key": "client_id",
+							"value": "{{client_id}}",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "{{client_secret}}",
+							"type": "text"
+						},
+						{
+							"key": "scope",
+							"value": "https://management.azure.com/.default",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://login.microsoftonline.com/{{tenant_id}}/oauth2/v2.0/token",
+					"protocol": "https",
+					"host": [
+						"login",
+						"microsoftonline",
+						"com"
+					],
+					"path": [
+						"{{tenant_id}}",
+						"oauth2",
+						"v2.0",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Azure - costs",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"type\": \"ActualCost\",\n    \"timeframe\": \"Custom\",\n    \"timePeriod\": {\n        \"from\": \"2024-07-01\",\n        \"to\": \"2024-08-01\" \n    },\n    \"dataset\": {\n        \"granularity\": \"Monthly\",\n        \"aggregation\": {\n            \"totalCost\": {\n                \"name\": \"Cost\",\n                \"function\": \"Sum\"\n            },\n        },\n        \"grouping\": [\n            {\n                \"type\": \"Dimension\",\n                \"name\": \"ResourceLocation\"\n            }\n        ]\n    }\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{{account}}/providers/Microsoft.CostManagement/query?api-version=2023-11-01",
+					"protocol": "https",
+					"host": [
+						"management",
+						"azure",
+						"com"
+					],
+					"path": [
+						"providers",
+						"Microsoft.Billing",
+						"billingAccounts",
+						"{{account}}",
+						"providers",
+						"Microsoft.CostManagement",
+						"query"
+					],
+					"query": [
+						{
+							"key": "api-version",
+							"value": "2023-11-01"
+						}
+					]
+				},
+				"description": "Valid dataset grouping:  \n\n- 'ResourceGroup'\n    \n- 'ResourceGroupName'\n    \n- 'ResourceLocation'\n    \n- 'ConsumedService'\n    \n- 'ResourceType'\n    \n- 'ResourceId'\n    \n- 'MeterId'\n    \n- 'BillingMonth'\n    \n- 'MeterCategory'\n    \n- 'MeterSubcategory'\n    \n- 'Meter'\n    \n- 'AccountName'\n    \n- 'DepartmentName'\n    \n- 'SubscriptionId'\n    \n- 'SubscriptionName'\n    \n- 'ServiceName'\n    \n- 'ServiceTier'\n    \n- 'EnrollmentAccountName'\n    \n- 'BillingAccountId'\n    \n- 'ResourceGuid'\n    \n- 'BillingPeriod'\n    \n- 'InvoiceNumber'\n    \n- 'ChargeType'\n    \n- 'PublisherType'\n    \n- 'ReservationId'\n    \n- 'ReservationName'\n    \n- 'Frequency'\n    \n- 'PartNumber'\n    \n- 'CostAllocationRuleName'\n    \n- 'MarkupRuleName'\n    \n- 'PricingModel'\n    \n- 'BenefitId'\n    \n- 'BenefitName'"
+			},
+			"response": []
+		},
+		{
+			"name": "Azure - costs (Subscription ID + Service)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.require('azure-pagination').costManagementQueryPreRequest(\"costManagementQuery\");"
+						],
+						"type": "text/javascript",
+						"packages": {
+							"azure-pagination": {
+								"id": "01919aef-ff1f-7443-94e5-dfd695e48cbf"
+							}
+						}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.require('azure-pagination').costManagementQueryPostResponse(\"costManagementQuery\");"
+						],
+						"type": "text/javascript",
+						"packages": {
+							"azure-pagination": {
+								"id": "01919aef-ff1f-7443-94e5-dfd695e48cbf"
+							}
+						}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"type\": \"ActualCost\",\n    \"timeframe\": \"Custom\",\n    \"timePeriod\": {\n        \"from\": \"2024-08-01\",\n        \"to\": \"2024-08-28\"\n    },\n    \"dataset\": {\n        \"granularity\": \"Daily\",\n        \"aggregation\": {\n            \"totalCost\": {\n                \"name\": \"Cost\",\n                \"function\": \"Sum\"\n            }\n        },\n        \"grouping\": [\n            {\n                \"type\": \"Dimension\",\n                \"name\": \"SubscriptionId\"\n            },\n            {\n                \"type\": \"Dimension\",\n                \"name\": \"ServiceName\"\n            }\n        ]\n    }\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{costManagementQuery}}",
+					"host": [
+						"{{costManagementQuery}}"
+					]
+				},
+				"description": "Valid dataset grouping:  \n\n- 'ResourceGroup'\n    \n- 'ResourceGroupName'\n    \n- 'ResourceLocation'\n    \n- 'ConsumedService'\n    \n- 'ResourceType'\n    \n- 'ResourceId'\n    \n- 'MeterId'\n    \n- 'BillingMonth'\n    \n- 'MeterCategory'\n    \n- 'MeterSubcategory'\n    \n- 'Meter'\n    \n- 'AccountName'\n    \n- 'DepartmentName'\n    \n- 'SubscriptionId'\n    \n- 'SubscriptionName'\n    \n- 'ServiceName'\n    \n- 'ServiceTier'\n    \n- 'EnrollmentAccountName'\n    \n- 'BillingAccountId'\n    \n- 'ResourceGuid'\n    \n- 'BillingPeriod'\n    \n- 'InvoiceNumber'\n    \n- 'ChargeType'\n    \n- 'PublisherType'\n    \n- 'ReservationId'\n    \n- 'ReservationName'\n    \n- 'Frequency'\n    \n- 'PartNumber'\n    \n- 'CostAllocationRuleName'\n    \n- 'MarkupRuleName'\n    \n- 'PricingModel'\n    \n- 'BenefitId'\n    \n- 'BenefitName'"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "costManagementQuery",
+			"value": "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{{account}}/providers/Microsoft.CostManagement/query?api-version=2023-11-01"
+		},
+		{
+			"key": "costManagementQuery.lastTimeTaken",
+			"value": ""
+		},
+		{
+			"key": "costManagementQuery.nextLink",
+			"value": ""
+		}
+	]
+}
